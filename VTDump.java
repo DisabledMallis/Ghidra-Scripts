@@ -35,7 +35,9 @@ public class VTDump extends GhidraScript {
 	Address nextInTable = firstInTable;
 	int maxIter = 500;
 
-	String output = "";
+	int currentIter = 0;
+
+	String output = "\n";
 //Get all func names and gen vtable code
 	while(getFunctionAt(deref(nextInTable)) != null){
 
@@ -46,7 +48,15 @@ public class VTDump extends GhidraScript {
 		}
 
 		println("Current: "+nextInTable + " Func name: "+function.getName());
+/*
+ * Return types
+ */
 		String returnType = function.getReturnType().getName().replace(" *","*");
+//Sanitize return type
+//Make string return types not ugly
+		if(returnType.contains("basic_string")){
+			returnType = "std::string*";
+		}
 //if the return type contains a capital, it cannot be primitive and must be a class by mojang's standards (or so it seems)
 		if(returnType.matches(".*[A-Z].*")){
 //all classes are returned as pointers, so this must be one, right?
@@ -56,7 +66,40 @@ public class VTDump extends GhidraScript {
 //Add class definition because it may not be defined already
 			returnType = "class "+returnType;
 		}
-		output += "virtual "+returnType+" "+function.getName()+"() {}\n";
+/*
+ * Func name
+ */
+//Sanitize function name
+		String funcName = function.getName();
+//if funcname contains a @ its mangled, prob dont need it anyway so lets just give a generic ass name. Same goes for < and > cuz templates long and ugly
+		if(funcName.contains("@") || funcName.contains("<") || funcName.contains(">")){
+			funcName = "Func_"+currentIter;
+		}
+/*
+ * Parameters
+ */
+		String paramsStr = "";
+		Parameter[] params = function.getParameters();
+		int count = 0;
+		for(Parameter param : params){
+			String type = param.getFormalDataType().getName();
+			String name = param.getName();
+			if(count==0){ count++; continue; }
+			if(type.matches(".*[A-Z].*")){
+				if(!type.contains("*")){
+					type+="*";
+				}
+				type = "class "+type;
+			}
+			type = type.replace(" *", "*");
+			paramsStr += "{TYPE} {NAME}".replace("{TYPE}", type).replace("{NAME}", name);
+			if(params.length != count+1){
+				paramsStr += ", ";
+			}
+			//println("Count: "+count+" size: "+params.length);
+			count++;
+		}
+		output += "virtual "+returnType+" "+funcName+"("+paramsStr+") {}\n";
 
 		nextInTable = nextInTable.add(8);
 		maxIter--;
@@ -68,6 +111,7 @@ public class VTDump extends GhidraScript {
 		println("Yes or No? " + yesOrNo);
 
 		if(!yesOrNo){ break; }*/
+		currentIter++;
 		continue;
 	}
 	println(output);
