@@ -21,7 +21,7 @@ import ghidra.program.model.address.*;
 import java.util.*;
 
 public class VTDump extends GhidraScript {
-	
+
     ArrayList<String> funcNames = new ArrayList<String>();
     public Address deref(Address addr) throws Exception {
 	return addr.getNewAddress(getLong(addr));
@@ -46,7 +46,17 @@ public class VTDump extends GhidraScript {
 		}
 
 		println("Current: "+nextInTable + " Func name: "+function.getName());
-		output += "virtual void "+function.getName()+"() {}\n";
+		String returnType = function.getReturnType().getName().replace(" *","*");
+//if the return type contains a capital, it cannot be primitive and must be a class by mojang's standards (or so it seems)
+		if(returnType.matches(".*[A-Z].*")){
+//all classes are returned as pointers, so this must be one, right?
+			if(!returnType.contains("*")){
+				returnType+="*";
+			}
+//Add class definition because it may not be defined already
+			returnType = "class "+returnType;
+		}
+		output += "virtual "+returnType+" "+function.getName()+"() {}\n";
 
 		nextInTable = nextInTable.add(8);
 		maxIter--;
