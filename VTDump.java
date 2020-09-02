@@ -72,8 +72,11 @@ public class VTDump extends GhidraScript {
 //Sanitize function name
 		String funcName = function.getName();
 //if funcname contains a @ its mangled, prob dont need it anyway so lets just give a generic ass name. Same goes for < and > cuz templates long and ugly
-		if(funcName.contains("@") || funcName.contains("<") || funcName.contains(">")){
-			funcName = "UndefinedFunc_"+currentIter;
+		String[] badFuncNames = {"@", "<", ">", "`", "'"};
+		for(String chr : badFuncNames){
+			if(funcName.contains(chr)){
+				funcName = "UndefinedFunc_"+currentIter;
+			}
 		}
 /*
  * Parameters
