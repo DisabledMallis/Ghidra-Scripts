@@ -34,7 +34,9 @@ public class VTDump extends GhidraScript {
 	println("Test: "+deref(firstInTable));
 	Address nextInTable = firstInTable;
 	int maxIter = 500;
-//Get all func names
+
+	String output = "";
+//Get all func names and gen vtable code
 	while(getFunctionAt(deref(nextInTable)) != null){
 
 		Function function = getFunctionAt(deref(nextInTable));
@@ -44,7 +46,7 @@ public class VTDump extends GhidraScript {
 		}
 
 		println("Current: "+nextInTable + " Func name: "+function.getName());
-		funcNames.add(function.getName());
+		output += "virtual void "+function.getName()+"() {}\n";
 
 		nextInTable = nextInTable.add(8);
 		maxIter--;
@@ -57,11 +59,6 @@ public class VTDump extends GhidraScript {
 
 		if(!yesOrNo){ break; }*/
 		continue;
-	}
-//Gen vtable code
-	String output = "";
-	for(String funcName : funcNames){
-		output += "virtual void "+funcName+"() {}\n";
 	}
 	println(output);
     }
