@@ -73,7 +73,7 @@ public class VTDump extends GhidraScript {
 		String funcName = function.getName();
 //if funcname contains a @ its mangled, prob dont need it anyway so lets just give a generic ass name. Same goes for < and > cuz templates long and ugly
 		if(funcName.contains("@") || funcName.contains("<") || funcName.contains(">")){
-			funcName = "Func_"+currentIter;
+			funcName = "UndefinedFunc_"+currentIter;
 		}
 /*
  * Parameters
@@ -83,6 +83,9 @@ public class VTDump extends GhidraScript {
 		int count = 0;
 		for(Parameter param : params){
 			String type = param.getFormalDataType().getName();
+			if(funcName.contains("UndefinedFunc_")){
+				type="void*";
+			}
 			String name = param.getName();
 			if(count==0){ count++; continue; }
 			if(type.matches(".*[A-Z].*")){
