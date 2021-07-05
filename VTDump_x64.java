@@ -1,9 +1,9 @@
-//TODO write a description for this script
-//@author 
-//@category _NEW_
-//@keybinding 
-//@menupath 
-//@toolbar 
+//Dump a classes VTable to C++ code you can copy into your class generated with reclass
+//@author DisabledMallis, belohnung
+//@category MINECRAFT
+//@keybinding
+//@menupath
+//@toolbar
 
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.util.*;
@@ -35,22 +35,24 @@ public class VTDump_x64 extends GhidraScript {
 	public static final String TYPE_PLACEHOLDER = "{TYPE}";
 	public static final String NAME_PLACEHOLDER = "{NAME}";
 	public static final String TYPE_NAME_PLACEHOLDER = TYPE_PLACEHOLDER + " " + NAME_PLACEHOLDER;
+	public static final boolean DEBUG = false;
 
 	public Address deref(Address addr) throws Exception {
 		return addr.getNewAddress(getLong(addr));
 	}
 
 	public void run() throws Exception {
-		println("Hello");
 		Address firstInTable = currentAddress;
-		println("Beginning of VTable: " + firstInTable);
-		println("Test: " + deref(firstInTable));
+		if(DEBUG){
+		  println("Beginning of VTable: " + firstInTable);
+		  println("Test: " + deref(firstInTable));
+		}
 		Address nextInTable = firstInTable;
 		int maxIter = 500;
 
 		int currentIter = 0;
 
-		String output = "\n";
+		Set<String> outputArray = new LinkedHashSet<String>();
 		// Get all func names and gen vtable code
 		while (getFunctionAt(deref(nextInTable)) != null) {
 
@@ -59,8 +61,9 @@ public class VTDump_x64 extends GhidraScript {
 				println("Func is null");
 				break;
 			}
-
-			println("Current: " + nextInTable + " Func name: " + function.getName());
+            if(DEBUG){
+			  println("Current: " + nextInTable + " Func name: " + function.getName());
+			}
 			/*
 			 * Return types
 			 */
@@ -123,7 +126,16 @@ public class VTDump_x64 extends GhidraScript {
 				// println("Count: "+count+" size: "+params.length);
 				count++;
 			}
-			output += "virtual " + returnType + " " + funcName + "(" + paramsStr + ") {}\n";
+
+		    String line = "virtual " + returnType + " " + funcName + "(" + paramsStr + ") {}";
+
+		    if(!outputArray.add(line)) {
+		    	int counter = 0;
+		    	while (!outputArray.add(line)) {
+		    		counter++;
+		    	    line = "virtual " + returnType + " " + funcName + "_" + counter + "(" + paramsStr + ") {}";
+		    	}
+		    }
 
 			nextInTable = nextInTable.add(8);
 			maxIter--;
@@ -134,12 +146,17 @@ public class VTDump_x64 extends GhidraScript {
 			/*
 			 * boolean yesOrNo = askYesNo("yes or no", "is this a yes/no question?");
 			 * println("Yes or No? " + yesOrNo);
-			 * 
+			 *
 			 * if(!yesOrNo){ break; }
 			 */
 			currentIter++;
 			continue;
 		}
-		println(output);
+		String outputString = "\n";
+
+		for (String line : outputArray){
+            outputString += line + "\n";
+		}
+		println(outputString);
 	}
 }
