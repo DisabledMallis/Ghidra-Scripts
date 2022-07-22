@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.List;
 
-public class VTDump_x64 extends GhidraScript {
+public class VTDump extends GhidraScript {
 
 	final List<String> funcNames = new ArrayList<String>();
 
@@ -38,7 +38,13 @@ public class VTDump_x64 extends GhidraScript {
 	public static final boolean DEBUG = false;
 
 	public Address deref(Address addr) throws Exception {
-		return addr.getNewAddress(getLong(addr));
+		switch(addr.getPointerSize()) {
+		case 4:
+			return addr.getNewAddress(getInt(addr));
+		case 8:
+		default:
+			return addr.getNewAddress(getLong(addr));
+		}
 	}
 
 	public void run() throws Exception {
@@ -137,7 +143,7 @@ public class VTDump_x64 extends GhidraScript {
 		    	}
 		    }
 
-			nextInTable = nextInTable.add(8);
+			nextInTable = nextInTable.add(nextInTable.getPointerSize());
 			maxIter--;
 			if (maxIter < 0) {
 				println("FAILED");
