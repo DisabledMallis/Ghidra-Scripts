@@ -102,6 +102,10 @@ public class VTDump extends GhidraScript {
 					funcName = UNDEFINED_FUNCTION + currentIter;
 				}
 			}
+			//Check if it is a destructor
+			if(funcName.startsWith("~")) {
+				returnType = "";
+			}
 			/*
 			 * Parameters
 			 */
@@ -133,13 +137,15 @@ public class VTDump extends GhidraScript {
 				count++;
 			}
 
-		    String line = "virtual " + returnType + " " + funcName + "(" + paramsStr + ") {}";
+			if(returnType != null && !returnType.equals(""))
+				returnType += " ";
+		    String line = "virtual " + returnType + funcName + "(" + paramsStr + ") {}";
 
 		    if(!outputArray.add(line)) {
 		    	int counter = 0;
 		    	while (!outputArray.add(line)) {
 		    		counter++;
-		    	    line = "virtual " + returnType + " " + funcName + "_" + counter + "(" + paramsStr + ") {}";
+		    	    line = "virtual " + returnType + funcName + "_" + counter + "(" + paramsStr + ") {}";
 		    	}
 		    }
 
