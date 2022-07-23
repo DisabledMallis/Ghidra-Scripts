@@ -37,6 +37,28 @@ public class VTDump extends GhidraScript {
 	public static final String TYPE_NAME_PLACEHOLDER = TYPE_PLACEHOLDER + " " + NAME_PLACEHOLDER;
 	public static final boolean DEBUG = false;
 
+	public String undefinedNearestPrimitive(String undefinedType) {
+		if(undefinedType.contains("undefined")) {
+			if(undefinedType.equals("undefined")) {
+				return "void*";
+			}
+			else {
+				int size = Integer.parseInt(undefinedType.substring(9));
+				switch(size) {
+				case 1:
+					return "uint8_t";
+				case 2:
+					return "uint16_t";
+				case 4:
+					return "uint32_t";
+				case 8:
+					return "uint64_t";
+				}
+			}
+		}
+		return undefinedType;
+	}
+
 	public Address deref(Address addr) throws Exception {
 		switch(addr.getPointerSize()) {
 		case 4:
@@ -89,6 +111,9 @@ public class VTDump extends GhidraScript {
 				// Add class definition because it may not be defined already
 				returnType = "class " + returnType;
 			}
+			if(returnType.contains("undefined")) {
+				returnType = undefinedNearestPrimitive(returnType);
+			}
 			/*
 			 * Func name
 			 */
@@ -129,6 +154,9 @@ public class VTDump extends GhidraScript {
 					type = "class " + type;
 				}
 				type = type.replace(" " + POINTER_TYPE, POINTER_TYPE);
+				if(type.contains("undefined")) {
+					type = undefinedNearestPrimitive(type);
+				}
 				paramsStr += TYPE_NAME_PLACEHOLDER.replace(TYPE_PLACEHOLDER, type).replace(NAME_PLACEHOLDER, name);
 				if (params.length != count + 1) {
 					paramsStr += ", ";
@@ -137,15 +165,38 @@ public class VTDump extends GhidraScript {
 				count++;
 			}
 
+			//Return a default value so the code compiles
+			String returnCode = "";
 			if(returnType != null && !returnType.equals(""))
 				returnType += " ";
-		    String line = "virtual " + returnType + funcName + "(" + paramsStr + ") {}";
+			switch(returnType) {
+			case "bool":
+				returnCode = "return false;";
+				break;
+			case "short":
+			case "int":
+			case "long":
+				returnCode = "return 0;";
+				break;
+			case "float":
+				returnCode = "return 0.0f;";
+				break;
+			case "double":
+				returnCode = "return 0.0;";
+				break;
+			default:
+				returnCode = "";
+			}
+			if (returnType.contains(POINTER_TYPE)) {
+				returnCode = "return nullptr;";
+			}
+		    String line = "virtual " + returnType + funcName + "(" + paramsStr + ") {" + returnCode + "}";
 
 		    if(!outputArray.add(line)) {
 		    	int counter = 0;
 		    	while (!outputArray.add(line)) {
 		    		counter++;
-		    	    line = "virtual " + returnType + funcName + "_" + counter + "(" + paramsStr + ") {}";
+		    	    line = "virtual " + returnType + funcName + "_" + counter + "(" + paramsStr + ") {" + returnCode + "}";
 		    	}
 		    }
 
